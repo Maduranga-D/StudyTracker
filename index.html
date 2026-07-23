@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTW - Time to Work</title>
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/digital-numbers');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #030308;
+            color: #ffffff;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px 15px;
+            overflow-x: hidden;
+            position: relative;
+            transition: background 0.8s ease;
+        }
+
+        /* --- BACKGROUND CANVAS & OVERLAY --- */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .ambient-overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            pointer-events: none;
+            transition: all 0.8s ease;
+        }
+
+        /* THEMES */
+        body.theme-rain .ambient-overlay { background: linear-gradient(180deg, rgba(10, 20, 35, 0.2) 0%, rgba(5, 10, 20, 0.6) 100%); }
+        body.theme-leaves .ambient-overlay { background: radial-gradient(circle at 50% 30%, rgba(30, 60, 20, 0.2), rgba(5, 15, 5, 0.7)); }
+        body.theme-lofi .ambient-overlay { background: radial-gradient(circle at 50% 80%, rgba(255, 140, 0, 0.08), rgba(10, 5, 20, 0.8)); }
+        body.theme-cyber .ambient-overlay { background: radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.08), rgba(5, 5, 15, 0.7)); }
+        body.theme-space .ambient-overlay { background: radial-gradient(circle at 50% 50%, rgba(155, 89, 182, 0.08), rgba(5, 5, 10, 0.7)); }
+        body.theme-minimal { background-color: #000000; }
+        body.theme-minimal .ambient-overlay { background: none; }
+
+        /* TOP BAR */
+        .top-bar {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .local-clock {
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: rgba(0, 240, 255, 0.9);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            backdrop-filter: blur(8px);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            font-size: 12px;
+            color: #ddd;
+        }
+
+        .control-group input[type="range"] {
+            width: 80px;
+            cursor: pointer;
+            accent-color: #00f0ff;
+        }
+
+        .icon-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            backdrop-filter: blur(8px);
+        }
+
+        .icon-btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: #00f0ff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        }
+
+        h1 {
+            font-size: clamp(26px, 4vw, 42px);
+            letter-spacing: 6px;
+            margin-top: 55px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(90deg, #ff007f, #00f0ff, #7000ff, #ff007f);
+            background-size: 300% 100%;
+            animation: rgbText 6s linear infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.3));
+        }
+
+        @keyframes rgbText {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* --- ADJUSTABLE GLASS CONTAINER --- */
+        .timer-container {
+            background: rgba(10, 10, 20, 0.2); /* Default Opacity, Controlled by JS Slider */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 28px;
+            padding: clamp(20px, 3vw, 35px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.02);
+            max-width: 1250px;
+            width: 95%;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        .timer-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00f0ff, #ff007f, transparent);
+        }
+
+        .fade-element { transition: opacity 0.3s ease-in-out; }
+        .hidden { display: none !important; opacity: 0; }
+
+        /* SETUP MODE */
+        .presets-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ddd;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+        }
+
+        .preset-btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: #00f0ff;
+            color: #00f0ff;
+        }
+
+        .inputs-section {
+            margin: 20px 0 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .inputs-section input {
+            width: clamp(80px, 12vw, 110px);
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 12px;
+            text-align: center;
+            font-size: clamp(22px, 3vw, 32px);
+            font-weight: bold;
+        }
+
+        .inputs-section input:focus {
+            border-color: #00f0ff;
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            outline: none;
+        }
+
+        /* DASHBOARD GRID */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        @media (min-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1.1fr 0.9fr;
+            }
+        }
+
+        .timer-visual-side {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+        }
+
+        .stats-control-side {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* --- CHARACTER ANIMATION WRAPPER --- */
+        .character-box {
+            position: absolute;
+            bottom: -15px;
+            right: 0px;
+            width: clamp(70px, 10vw, 110px);
+            height: clamp(70px, 10vw, 110px);
+            z-index: 5;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+            transition: all 0.3s ease;
+        }
+
+        .character-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* LINE VIEW PROGRESS */
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00f0ff, #00ffcc);
+            box-shadow: 0 0 12px #00f0ff;
+            border-radius: 10px;
+            transition: width 0.3s linear;
+        }
+
+        .progress-bar-fill.overtime {
+            background: linear-gradient(90deg, #ff007f, #ff5500);
+            box-shadow: 0 0 12px #ff007f;
+            width: 100% !important;
+        }
+
+        /* RING ENGINE */
+        .ring-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ring-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            overflow: visible;
+        }
+
+        .ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 8;
+        }
+
+        .ring-circle {
+            fill: none;
+            stroke: #00f0ff;
+            stroke-width: 8;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 10px #00f0ff);
+            transition: stroke-dashoffset 0.3s linear, stroke 0.5s ease;
+        }
+
+        .ring-circle.overtime {
+            stroke: #ff007f;
+            filter: drop-shadow(0 0 10px #ff007f);
+        }
+
+        .ring-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 85%;
+            text-align: center;
+        }
+
+        .labels {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(10px, 1.3vw, 13px);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .display {
+            font-family: 'Digital Numbers', sans-serif;
+            font-size: clamp(26px, 4.5vw, 48px);
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            white-space: nowrap;
+        }
+
+        .style-line .display {
+            font-size: clamp(40px, 7vw, 80px);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .display.overtime {
+            color: #ff007f;
+            text-shadow: 0 0 20px rgba(255, 0, 127, 0.7);
+        }
+
+        /* STATS CARDS */
+        .status-cards-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .status-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 14px 20px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(6px);
+            transition: transform 0.2s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .card-target::before { background: #00f0ff; box-shadow: 0 0 10px #00f0ff; }
+        .card-elapsed::before { background: #00ffcc; box-shadow: 0 0 10px #00ffcc; }
+        .card-stopped::before { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
+        .card-overtime::before { background: #ff007f; box-shadow: 0 0 10px #ff007f; }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-icon { font-size: 16px; opacity: 0.9; }
+
+        .status-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .status-value {
+            font-family: 'Digital Numbers', sans-serif;
+            font-size: clamp(18px, 2vw, 24px);
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .card-target .status-value { color: #ffffff; }
+        .card-elapsed .status-value { color: #00ffcc; text-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
+        .card-stopped .status-value { color: #ffaa00; text-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
+        .card-overtime .status-value { color: #ff007f; text-shadow: 0 0 8px rgba(255, 0, 127, 0.5); }
+
+        /* CONTROLS */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .controls button {
+            background: rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 13px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(6px);
+        }
+
+        #startBtn { border-color: rgba(0, 240, 255, 0.4); }
+        #startBtn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            color: #00f0ff;
+            border-color: #00f0ff;
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.4);
+        }
+
+        #stopBtn { border-color: rgba(255, 170, 0, 0.4); }
+        #stopBtn:hover {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+            border-color: #ffaa00;
+            box-shadow: 0 0 18px rgba(255, 170, 0, 0.4);
+        }
+
+        #resetBtn { border-color: rgba(255, 255, 255, 0.2); }
+        #resetBtn:hover {
+            background: rgba(255, 0, 127, 0.2);
+            color: #ff007f;
+            border-color: #ff007f;
+            box-shadow: 0 0 18px rgba(255, 0, 127, 0.4);
+        }
+
+    </style>
+</head>
+<body class="theme-rain">
+
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="bgCanvas"></canvas>
+    <div class="ambient-overlay"></div>
+
+    <div class="top-bar">
+        <div class="local-clock" id="localClock">00:00:00 AM</div>
+        <div class="top-bar-right">
+            <!-- OPACITY ADJUSTMENT SLIDER -->
+            <div class="control-group">
+                <span>🎛️ Box Opacity</span>
+                <input type="range" id="opacitySlider" min="0" max="0.8" step="0.05" value="0.2" oninput="changeOpacity(this.value)">
+            </div>
+            <button class="icon-btn" onclick="cycleTheme()" id="themeBtn">🌧️ Theme: Rain</button>
+            <button class="icon-btn" onclick="toggleStyle()" id="styleToggleBtn">🔄 Style: Ring</button>
+            <button class="icon-btn" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+        </div>
+    </div>
+
+    <h1>TTW - Time to Work</h1>
+
+    <div class="timer-container" id="timerContainer">
+        
+        <!-- SETUP MODE -->
+        <div id="setupMode" class="fade-element">
+            <h2 style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 15px; font-weight: normal; letter-spacing: 2px; text-transform: uppercase; text-align: center;">Quick Presets</h2>
+            
+            <div class="presets-grid">
+                <button class="preset-btn" onclick="setPreset(0, 15, 0)">15M</button>
+                <button class="preset-btn" onclick="setPreset(0, 25, 0)">25M</button>
+                <button class="preset-btn" onclick="setPreset(0, 50, 0)">50M</button>
+                <button class="preset-btn" onclick="setPreset(1, 0, 0)">1H</button>
+                <button class="preset-btn" onclick="setPreset(2, 0, 0)">2H</button>
+                <button class="preset-btn" onclick="setPreset(3, 0, 0)">3H</button>
+                <button class="preset-btn" onclick="setPreset(6, 0, 0)">6H</button>
+            </div>
+
+            <h2 style="color: rgba(255,255,255,0.5); font-size: 12px; margin-bottom: 10px; font-weight: normal; letter-spacing: 2px; text-transform: uppercase; text-align: center;">Or Set Custom Target Time</h2>
+            <div class="inputs-section">
+                <input type="number" id="hrs" placeholder="HH" min="0" max="99" oninput="validity.valid||(value='');">
+                <input type="number" id="mins" placeholder="MM" min="0" max="59" oninput="validity.valid||(value='');">
+                <input type="number" id="secs" placeholder="SS" min="0" max="59" oninput="validity.valid||(value='');">
+            </div>
+            <div class="controls" style="max-width: 300px; margin: 0 auto;">
+                <button id="startInitialBtn" onclick="startTimer()">Start Timer</button>
+            </div>
+        </div>
+
+        <!-- ACTIVE DASHBOARD MODE -->
+        <div id="activeMode" class="fade-element hidden">
+            <div class="dashboard-grid">
+                
+                <!-- LEFT SIDE: TIMER VISUALIZATION & ANIMATION -->
+                <div class="timer-visual-side">
+                    
+                    <!-- DYNAMIC ANIMATED CHARACTER (WORK / EAT) -->
+                    <div class="character-box" id="characterBox">
+                        <img id="charImg" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnE0MG0wZThzNXQyZXlsOHBvd3l4MGp1eDFsdGFuNmtldml6eXdwMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/SW92X6I2BInbOq6BUp/giphy.gif" alt="Working Animation">
+                    </div>
+
+                    <!-- LINE VIEW -->
+                    <div id="lineView" class="hidden" style="width: 100%;">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progressBar"></div>
+                        </div>
+                        <div class="labels" style="width: 100%;">
+                            <span>Hours</span>
+                            <span>Minutes</span>
+                            <span>Seconds</span>
+                        </div>
+                        <div class="display" id="timerDisplayLine">00:00:00</div>
+                    </div>
+
+                    <!-- RING VIEW -->
+                    <div id="ringView" style="width: 100%;">
+                        <div class="ring-wrapper">
+                            <svg class="ring-svg" viewBox="0 0 240 240">
+                                <circle class="ring-bg" cx="120" cy="120" r="102"></circle>
+                                <circle class="ring-circle" id="ringCircle" cx="120" cy="120" r="102" stroke-dasharray="640.88" stroke-dashoffset="0"></circle>
+                            </svg>
+                            <div class="ring-content">
+                                <div class="labels">
+                                    <span>HRS</span>
+                                    <span>MIN</span>
+                                    <span>SEC</span>
+                                </div>
+                                <div class="display" id="timerDisplayRing">00:00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDE: STATS CARDS & CONTROLS -->
+                <div class="stats-control-side">
+                    <div class="status-cards-vertical">
+                        <div class="status-card card-target">
+                            <div class="status-info">
+                                <span class="status-icon">🎯</span>
+                                <span class="status-label">Target Time</span>
+                            </div>
+                            <span class="status-value" id="targetStatus">00:15:00</span>
+                        </div>
+                        
+                        <div class="status-card card-elapsed">
+                            <div class="status-info">
+                                <span class="status-icon">⏱️</span>
+                                <span class="status-label">Total Elapsed</span>
+                            </div>
+                            <span class="status-value" id="elapsedStatus">00:00:00</span>
+                        </div>
+                        
+                        <div class="status-card card-stopped">
+                            <div class="status-info">
+                                <span class="status-icon">⏸️</span>
+                                <span class="status-label">Total Paused</span>
+                            </div>
+                            <span class="status-value" id="stopStatus">00:00:00</span>
+                        </div>
+                        
+                        <div class="status-card card-overtime hidden" id="overtimeCard">
+                            <div class="status-info">
+                                <span class="status-icon">⚠️</span>
+                                <span class="status-label">Overtime</span>
+                            </div>
+                            <span class="status-value" id="overtimeStatus">+00:00:00</span>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button id="startBtn" onclick="startTimer()">▶ Start</button>
+                        <button id="stopBtn" onclick="togglePauseResume()">⏸ Pause</button>
+                        <button id="resetBtn" onclick="resetTimer()">↺ Reset</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- OPACITY CONTROL ---
+        function changeOpacity(val) {
+            document.getElementById('timerContainer').style.background = `rgba(10, 10, 20, ${val})`;
+            localStorage.setItem('ttw_opacity', val);
+        }
+
+        const savedOpacity = localStorage.getItem('ttw_opacity');
+        if(savedOpacity !== null) {
+            document.getElementById('opacitySlider').value = savedOpacity;
+            changeOpacity(savedOpacity);
+        }
+
+        function updateLocalClock() {
+            const now = new Date();
+            document.getElementById('localClock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateLocalClock, 1000);
+        updateLocalClock();
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // --- BACKGROUND CANVAS ENGINE ---
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let elements = [];
+        let currentThemeIndex = 0;
+
+        const themes = [
+            { id: 'theme-rain', name: '🌧️ Theme: Rain' },
+            { id: 'theme-leaves', name: '🍃 Theme: Leaves' },
+            { id: 'theme-lofi', name: '📖 Theme: Lofi Study' },
+            { id: 'theme-cyber', name: '⚡ Theme: Cyber' },
+            { id: 'theme-space', name: '🌌 Theme: Space' },
+            { id: 'theme-minimal', name: '🖤 Theme: Minimal' }
+        ];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initThemeElements();
+        }
+
+        function initThemeElements() {
+            elements = [];
+            const theme = themes[currentThemeIndex].id;
+
+            if (theme === 'theme-rain') {
+                const count = Math.floor(canvas.width / 6);
+                for (let i = 0; i < count; i++) {
+                    elements.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        length: Math.random() * 25 + 12,
+                        speed: Math.random() * 12 + 15
+                    });
+                }
+            } else if (theme === 'theme-leaves') {
+                for (let i = 0; i < 40; i++) {
+                    elements.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 8 + 5,
+                        speedY: Math.random() * 1.5 + 0.8,
+                        speedX: Math.random() * 1 - 0.5,
+                        rotation: Math.random() * 360,
+                        rotSpeed: Math.random() * 2 - 1,
+                        color: ['#88b04b', '#4d7c0f', '#a3e635', '#ca8a04'][Math.floor(Math.random() * 4)]
+                    });
+                }
+            } else if (theme === 'theme-lofi' || theme === 'theme-cyber' || theme === 'theme-space') {
+                for (let i = 0; i < 80; i++) {
+                    elements.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 2.5 + 0.5,
+                        vx: Math.random() * 0.8 - 0.4,
+                        vy: Math.random() * 0.8 - 0.4,
+                        alpha: Math.random(),
+                        speed: Math.random() * 0.03 + 0.008,
+                        color: theme === 'theme-cyber' ? '#00f0ff' : (theme === 'theme-space' ? '#a855f7' : '#ffaa00')
+                    });
+                }
+            }
+        }
+
+        function renderBackground() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const theme = themes[currentThemeIndex].id;
+
+            if (theme === 'theme-rain') {
+                ctx.strokeStyle = 'rgba(174, 194, 224, 0.6)';
+                ctx.lineWidth = 1.4;
+                for (let r of elements) {
+                    ctx.beginPath();
+                    ctx.moveTo(r.x, r.y);
+                    ctx.lineTo(r.x - r.length * 0.1, r.y + r.length);
+                    ctx.stroke();
+
+                    r.y += r.speed;
+                    r.x -= 1;
+                    if (r.y > canvas.height) {
+                        r.y = -20;
+                        r.x = Math.random() * canvas.width;
+                    }
+                }
+            } else if (theme === 'theme-leaves') {
+                for (let l of elements) {
+                    ctx.save();
+                    ctx.translate(l.x, l.y);
+                    ctx.rotate((l.rotation * Math.PI) / 180);
+                    ctx.fillStyle = l.color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, l.size, l.size / 2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+
+                    l.y += l.speedY;
+                    l.x += Math.sin(l.y * 0.02) + l.speedX;
+                    l.rotation += l.rotSpeed;
+
+                    if (l.y > canvas.height) {
+                        l.y = -10;
+                        l.x = Math.random() * canvas.width;
+                    }
+                }
+            } else if (theme === 'theme-lofi' || theme === 'theme-cyber' || theme === 'theme-space') {
+                for (let p of elements) {
+                    p.alpha += p.speed;
+                    if (p.alpha > 1 || p.alpha < 0.1) p.speed = -p.speed;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0.1, p.alpha);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+
+            requestAnimationFrame(renderBackground);
+        }
+
+        function cycleTheme() {
+            document.body.classList.remove(themes[currentThemeIndex].id);
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            
+            document.body.classList.add(newTheme.id);
+            document.getElementById('themeBtn').textContent = newTheme.name;
+            localStorage.setItem('ttw_theme_index', currentThemeIndex);
+            
+            initThemeElements();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        const savedThemeIndex = localStorage.getItem('ttw_theme_index');
+        if (savedThemeIndex !== null) {
+            document.body.classList.remove('theme-rain');
+            currentThemeIndex = parseInt(savedThemeIndex);
+            document.body.classList.add(themes[currentThemeIndex].id);
+            document.getElementById('themeBtn').textContent = themes[currentThemeIndex].name;
+        }
+
+        resizeCanvas();
+        renderBackground();
+
+        // --- UI STYLE ENGINE ---
+        let currentStyle = localStorage.getItem('ttw_style') || 'ring'; 
+        const lineView = document.getElementById('lineView');
+        const ringView = document.getElementById('ringView');
+        const styleToggleBtn = document.getElementById('styleToggleBtn');
+        const timerContainer = document.getElementById('timerContainer');
+
+        function applyStyleUI() {
+            if (currentStyle === 'line') {
+                ringView.classList.add('hidden');
+                lineView.classList.remove('hidden');
+                timerContainer.classList.add('style-line');
+                styleToggleBtn.textContent = '🔄 Style: Line';
+            } else {
+                lineView.classList.add('hidden');
+                ringView.classList.remove('hidden');
+                timerContainer.classList.remove('style-line');
+                styleToggleBtn.textContent = '🔄 Style: Ring';
+            }
+        }
+
+        function toggleStyle() {
+            currentStyle = currentStyle === 'ring' ? 'line' : 'ring';
+            localStorage.setItem('ttw_style', currentStyle);
+            applyStyleUI();
+            updateDisplay(isOvertime ? overtimeSeconds : currentSeconds);
+        }
+
+        // --- ANIMATION URLs (WORKING vs EATING) ---
+        const WORK_ANIMATION = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnE0MG0wZThzNXQyZXlsOHBvd3l4MGp1eDFsdGFuNmtldml6eXdwMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/SW92X6I2BInbOq6BUp/giphy.gif"; // Working Boy
+        const EAT_ANIMATION = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGcxcnNrc3hhb3p6OXZudDRjMmhxaHRnNTdvaDdpZms2dnFiNjFscyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/iXbjY63BSpyL34T5oi/giphy.gif";  // Eating Rice Boy
+
+        function setCharacterState(state) {
+            const img = document.getElementById('charImg');
+            if (state === 'working') {
+                img.src = WORK_ANIMATION;
+            } else if (state === 'eating') {
+                img.src = EAT_ANIMATION;
+            }
+        }
+
+        // --- TIMER ENGINE ---
+        let mainTimer, stopCountUp;
+        let initialSeconds = 0, currentSeconds = 0, totalStopSeconds = 0, overtimeSeconds = 0; 
+        let isRunning = false, isStopRunning = false, isOvertime = false; 
+
+        const displayLine = document.getElementById('timerDisplayLine');
+        const displayRing = document.getElementById('timerDisplayRing');
+        const targetStatus = document.getElementById('targetStatus');
+        const elapsedStatus = document.getElementById('elapsedStatus');
+        const stopStatus = document.getElementById('stopStatus');
+        const overtimeCard = document.getElementById('overtimeCard');
+        const overtimeStatus = document.getElementById('overtimeStatus');
+        const stopBtn = document.getElementById('stopBtn');
+        const progressBar = document.getElementById('progressBar');
+        const ringCircle = document.getElementById('ringCircle');
+        const ringCircumference = 2 * Math.PI * 102;
+        
+        const setupMode = document.getElementById('setupMode');
+        const activeMode = document.getElementById('activeMode');
+
+        window.onload = function() {
+            applyStyleUI();
+
+            if(localStorage.getItem('ttw_initial')) {
+                initialSeconds = parseInt(localStorage.getItem('ttw_initial')) || 0;
+                currentSeconds = parseInt(localStorage.getItem('ttw_current')) || 0;
+                totalStopSeconds = parseInt(localStorage.getItem('ttw_stop_seconds')) || 0;
+                isOvertime = localStorage.getItem('ttw_is_overtime') === 'true';
+                overtimeSeconds = parseInt(localStorage.getItem('ttw_overtime_seconds')) || 0;
+                
+                switchToActiveMode();
+                if (isOvertime) enableOvertimeUI();
+                updateDisplay(isOvertime ? overtimeSeconds : currentSeconds);
+                updateStatusPanels();
+
+                if(localStorage.getItem('ttw_is_stopped') === 'true') {
+                    runStopTimer();
+                    updateStopButtonUI(true);
+                    setCharacterState('eating');
+                } else {
+                    setCharacterState('working');
+                }
+            }
+        };
+
+        function setPreset(h, m, s) {
+            document.getElementById('hrs').value = h || '';
+            document.getElementById('mins').value = m || '';
+            document.getElementById('secs').value = s || '';
+            startTimer();
+        }
+
+        function switchToActiveMode() {
+            setupMode.classList.add('hidden');
+            activeMode.classList.remove('hidden');
+        }
+
+        function switchToSetupMode() {
+            setupMode.classList.remove('hidden');
+            activeMode.classList.add('hidden');
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            
+            clearInterval(stopCountUp);
+            isStopRunning = false;
+            localStorage.setItem('ttw_is_stopped', 'false');
+            updateStopButtonUI(false);
+
+            setCharacterState('working'); // Show Working Boy
+
+            if (currentSeconds === 0 && !isOvertime) {
+                const hrs = Math.max(0, parseInt(document.getElementById('hrs').value) || 0);
+                const mins = Math.max(0, Math.min(59, parseInt(document.getElementById('mins').value) || 0));
+                const secs = Math.max(0, Math.min(59, parseInt(document.getElementById('secs').value) || 0));
+
+                currentSeconds = (hrs * 3600) + (mins * 60) + secs;
+                initialSeconds = currentSeconds;
+
+                if (currentSeconds <= 0) {
+                    alert("කරුණාකර වලංගු කාලයක් ඇතුලත් කරන්න!");
+                    return;
+                }
+                localStorage.setItem('ttw_initial', initialSeconds);
+            }
+
+            switchToActiveMode();
+            isRunning = true;
+            
+            mainTimer = setInterval(() => {
+                if (!isOvertime) {
+                    if (currentSeconds > 0) {
+                        currentSeconds--;
+                        localStorage.setItem('ttw_current', currentSeconds);
+                        updateDisplay(currentSeconds);
+                    } else {
+                        isOvertime = true;
+                        localStorage.setItem('ttw_is_overtime', 'true');
+                        enableOvertimeUI();
+                    }
+                } 
+                
+                if (isOvertime) {
+                    overtimeSeconds++;
+                    localStorage.setItem('ttw_overtime_seconds', overtimeSeconds);
+                    updateDisplay(overtimeSeconds);
+                }
+
+                updateStatusPanels();
+            }, 1000);
+        }
+
+        function togglePauseResume() {
+            if (isRunning) {
+                clearInterval(mainTimer);
+                isRunning = false;
+                runStopTimer();
+                updateStopButtonUI(true);
+                setCharacterState('eating'); // Show Eating Boy
+            } else if (isStopRunning) {
+                startTimer();
+            }
+        }
+
+        function updateStopButtonUI(isPaused) {
+            if (isPaused) {
+                stopBtn.textContent = "▶ Resume";
+                stopBtn.style.borderColor = "#00ffcc";
+                stopBtn.style.color = "#00ffcc";
+            } else {
+                stopBtn.textContent = "⏸ Pause";
+                stopBtn.style.borderColor = "rgba(255, 170, 0, 0.4)";
+                stopBtn.style.color = "#fff";
+            }
+        }
+
+        function runStopTimer() {
+            if(isStopRunning) return;
+            isStopRunning = true;
+            localStorage.setItem('ttw_is_stopped', 'true');
+
+            stopCountUp = setInterval(() => {
+                totalStopSeconds++;
+                localStorage.setItem('ttw_stop_seconds', totalStopSeconds);
+                updateStatusPanels();
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(mainTimer);
+            clearInterval(stopCountUp);
+            isRunning = false;
+            isStopRunning = false;
+            isOvertime = false;
+            
+            currentSeconds = 0;
+            initialSeconds = 0;
+            totalStopSeconds = 0;
+            overtimeSeconds = 0;
+            
+            localStorage.clear();
+            localStorage.setItem('ttw_style', currentStyle);
+            localStorage.setItem('ttw_theme_index', currentThemeIndex);
+
+            displayLine.classList.remove('overtime');
+            displayRing.classList.remove('overtime');
+            overtimeCard.classList.add('hidden');
+            
+            progressBar.classList.remove('overtime');
+            progressBar.style.width = "100%";
+
+            ringCircle.classList.remove('overtime');
+            ringCircle.style.strokeDashoffset = "0";
+
+            displayLine.textContent = "00:00:00";
+            displayRing.textContent = "00:00:00";
+            targetStatus.textContent = "00:00:00";
+            elapsedStatus.textContent = "00:00:00";
+            stopStatus.textContent = "00:00:00";
+            overtimeStatus.textContent = "+00:00:00";
+            
+            document.getElementById('hrs').value = '';
+            document.getElementById('mins').value = '';
+            document.getElementById('secs').value = '';
+
+            updateStopButtonUI(false);
+            switchToSetupMode();
+        }
+
+        function enableOvertimeUI() {
+            displayLine.classList.add('overtime');
+            displayRing.classList.add('overtime');
+            overtimeCard.classList.remove('hidden');
+            progressBar.classList.add('overtime');
+            ringCircle.classList.add('overtime');
+        }
+
+        function formatTime(secs) {
+            secs = Math.max(0, secs);
+            const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+            const s = (secs % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function updateDisplay(secs) {
+            const formatted = (isOvertime ? "+" : "") + formatTime(secs);
+            displayLine.textContent = formatted;
+            displayRing.textContent = formatted;
+            
+            if (!isOvertime && initialSeconds > 0) {
+                const ratio = currentSeconds / initialSeconds;
+                progressBar.style.width = `${ratio * 100}%`;
+
+                const offset = ringCircumference - (ratio * ringCircumference);
+                ringCircle.style.strokeDashoffset = offset;
+            } else if (isOvertime) {
+                ringCircle.style.strokeDashoffset = 0;
+            }
+        }
+
+        function updateStatusPanels() {
+            targetStatus.textContent = formatTime(initialSeconds);
+            const elapsed = Math.max(0, (initialSeconds - currentSeconds) + overtimeSeconds);
+            elapsedStatus.textContent = formatTime(elapsed);
+            stopStatus.textContent = formatTime(totalStopSeconds);
+            if (isOvertime) overtimeStatus.textContent = "+" + formatTime(overtimeSeconds);
+        }
+    </script>
+</body>
+</html>
