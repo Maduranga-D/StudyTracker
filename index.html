@@ -313,48 +313,101 @@
 
         .time-val {
             font-family: 'Digital Numbers', sans-serif;
-            font-size: clamp(26px, 6.5vw, 42px);
+            font-size: clamp(32px, 7.5vw, 48px);
             color: #ffffff;
-            letter-spacing: 1px;
-            text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-            transition: color 0.5s ease, text-shadow 0.5s ease;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            transition: all 0.4s ease;
+            animation: digitGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes digitGlow {
+            0%, 100% { 
+                text-shadow: 0 0 15px rgba(0, 240, 255, 0.4), 0 0 25px rgba(0, 240, 255, 0.2);
+            }
+            50% { 
+                text-shadow: 0 0 25px rgba(0, 240, 255, 0.8), 0 0 40px rgba(0, 240, 255, 0.4);
+            }
         }
 
         .time-lbl {
-            font-size: clamp(9px, 2.2vw, 11px);
-            color: rgba(0, 240, 255, 0.75);
-            letter-spacing: 2px;
+            font-size: clamp(10px, 2.5vw, 13px);
+            color: rgba(0, 240, 255, 0.85);
+            letter-spacing: 3px;
             margin-top: 6px;
             font-weight: 700;
             text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .ring-content.overtime .time-lbl {
+            color: rgba(255, 0, 127, 0.9);
+            text-shadow: 0 0 12px rgba(255, 0, 127, 0.6);
         }
 
         .time-colon {
             font-family: 'Digital Numbers', sans-serif;
-            font-size: clamp(24px, 6vw, 38px);
+            font-size: clamp(28px, 7vw, 42px);
             color: #00f0ff;
-            margin: 0 1px;
+            margin: 0 2px;
             transform: translateY(-8px);
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
-            animation: pulseColon 2s infinite ease-in-out;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+            animation: pulseColon 1.5s infinite ease-in-out;
         }
 
         @keyframes pulseColon {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            0%, 100% { 
+                opacity: 1;
+                text-shadow: 0 0 15px rgba(0, 240, 255, 0.8), 0 0 25px rgba(0, 240, 255, 0.4);
+            }
+            50% { 
+                opacity: 0.5;
+                text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            }
+        }
+
+        .ring-content.overtime .time-colon {
+            color: #ff007f;
+            text-shadow: 0 0 18px rgba(255, 0, 127, 0.9);
+            animation: overtimeColonPulse 1.2s infinite ease-in-out;
+        }
+
+        @keyframes overtimeColonPulse {
+            0%, 100% { 
+                opacity: 1;
+                text-shadow: 0 0 18px rgba(255, 0, 127, 0.9), 0 0 30px rgba(255, 0, 127, 0.5);
+            }
+            50% { 
+                opacity: 0.4;
+                text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+            }
         }
 
         .time-sub-tag {
-            font-size: 10px;
-            letter-spacing: 2.5px;
-            color: rgba(255, 255, 255, 0.4);
+            font-size: clamp(11px, 2.8vw, 14px);
+            letter-spacing: 3px;
+            color: rgba(0, 240, 255, 0.9);
             margin-top: 12px;
             text-transform: uppercase;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 700;
+            background: rgba(0, 240, 255, 0.1);
+            padding: 6px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            animation: glowPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+                opacity: 1;
+            }
+            50% { 
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+                opacity: 0.9;
+            }
         }
 
         /* Overtime Overrides for Ring Content */
@@ -371,26 +424,91 @@
         }
         .ring-content.overtime .time-sub-tag {
             color: #ff007f;
-            border-color: rgba(255, 0, 127, 0.3);
-            background: rgba(255, 0, 127, 0.1);
+            border-color: rgba(255, 0, 127, 0.6);
+            background: rgba(255, 0, 127, 0.15);
+            text-shadow: 0 0 15px rgba(255, 0, 127, 0.7);
+            animation: overtimeGlowPulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes overtimeGlowPulse {
+            0%, 100% { 
+                box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+                opacity: 1;
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(255, 0, 127, 0.9);
+                opacity: 0.85;
+            }
         }
 
         /* Line View Display Adjustment */
         .style-line .display {
             font-family: 'Digital Numbers', sans-serif;
-            font-size: clamp(45px, 11vw, 75px);
+            font-size: clamp(50px, 12vw, 85px);
             margin-bottom: 25px;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            animation: lineDisplayGlow 3s infinite ease-in-out;
         }
+
+        @keyframes lineDisplayGlow {
+            0%, 100% { 
+                text-shadow: 0 0 15px rgba(0, 240, 255, 0.5), 0 0 30px rgba(0, 240, 255, 0.3);
+            }
+            50% { 
+                text-shadow: 0 0 25px rgba(0, 240, 255, 0.9), 0 0 50px rgba(0, 240, 255, 0.5);
+            }
+        }
+
+        .style-line .display.overtime {
+            color: #ff007f;
+            text-shadow: 0 0 20px rgba(255, 0, 127, 0.8);
+            animation: lineOvertimeGlow 1.5s infinite ease-in-out;
+        }
+
+        @keyframes lineOvertimeGlow {
+            0%, 100% { 
+                text-shadow: 0 0 20px rgba(255, 0, 127, 0.7), 0 0 40px rgba(255, 0, 127, 0.4);
+            }
+            50% { 
+                text-shadow: 0 0 35px rgba(255, 0, 127, 1), 0 0 60px rgba(255, 0, 127, 0.6);
+            }
+        }
+
+        .style-line .time-sub-tag {
+            font-size: clamp(12px, 3vw, 16px);
+            letter-spacing: 4px;
+            padding: 8px 20px;
+        }
+
+        .style-line .time-sub-tag.overtime {
+            color: #ff007f;
+            border-color: rgba(255, 0, 127, 0.7);
+            background: rgba(255, 0, 127, 0.18);
+            text-shadow: 0 0 18px rgba(255, 0, 127, 0.8);
+            animation: lineOvertimeTagPulse 1.3s infinite ease-in-out;
+        }
+
+        @keyframes lineOvertimeTagPulse {
+            0%, 100% { 
+                box-shadow: 0 0 18px rgba(255, 0, 127, 0.5);
+            }
+            50% { 
+                box-shadow: 0 0 35px rgba(255, 0, 127, 0.9);
+            }
+        }
+
         .style-line .labels {
             display: flex;
             justify-content: space-around;
             width: 100%;
-            color: rgba(0, 240, 255, 0.7);
-            font-size: clamp(10px, 2.5vw, 13px);
+            color: rgba(0, 240, 255, 0.8);
+            font-size: clamp(11px, 2.8vw, 14px);
             letter-spacing: 3px;
             text-transform: uppercase;
             margin-bottom: 10px;
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
         }
 
         .inputs-section {
@@ -474,26 +592,56 @@
         .status-panel {
             margin-top: 25px;
             background: rgba(5, 5, 10, 0.8);
-            padding: 15px 20px;
-            border-radius: 15px;
-            border-left: 4px solid #00f0ff;
+            padding: 18px 22px;
+            border-radius: 18px;
+            border-left: 5px solid #00f0ff;
             text-align: left;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            transition: border-left-color 0.5s ease;
+            gap: 14px;
+            transition: border-left-color 0.5s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
         }
 
         .status-panel.overtime-panel {
             border-left-color: #ff007f;
+            box-shadow: 0 8px 30px rgba(255, 0, 127, 0.3);
+            animation: panelOvertimePulse 2s infinite ease-in-out;
+        }
+
+        @keyframes panelOvertimePulse {
+            0%, 100% { 
+                box-shadow: 0 8px 25px rgba(255, 0, 127, 0.25);
+            }
+            50% { 
+                box-shadow: 0 8px 40px rgba(255, 0, 127, 0.5);
+            }
         }
 
         .status-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .status-row:hover {
+            background: rgba(0, 240, 255, 0.05);
+            padding-left: 8px;
+            padding-right: 8px;
+            margin-left: -8px;
+            margin-right: -8px;
+            border-radius: 8px;
+            border-bottom-color: rgba(0, 240, 255, 0.2);
+        }
+
+        .status-panel.overtime-panel .status-row:hover {
+            background: rgba(255, 0, 127, 0.08);
+            border-bottom-color: rgba(255, 0, 127, 0.25);
         }
 
         .status-row:last-child {
@@ -502,30 +650,58 @@
         }
 
         .status-label {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: clamp(12px, 3.5vw, 13px);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(13px, 3.8vw, 14px);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .status-row:hover .status-label {
+            color: rgba(0, 240, 255, 0.9);
+        }
+
+        .status-panel.overtime-panel .status-row:hover .status-label {
+            color: rgba(255, 0, 127, 0.9);
         }
 
         .status-value {
             font-family: 'Digital Numbers', sans-serif;
-            font-size: clamp(16px, 4.5vw, 20px);
+            font-size: clamp(18px, 5vw, 22px);
             color: #ffffff;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .status-row:hover .status-value {
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+            transform: scale(1.02);
         }
 
         .status-row:nth-child(2) .status-value {
             color: #00ffcc;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            text-shadow: 0 0 12px rgba(0, 255, 204, 0.4);
         }
 
         .status-row:nth-child(3) .status-value {
             color: #ffaa00;
-            text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+            text-shadow: 0 0 12px rgba(255, 170, 0, 0.4);
         }
 
         .status-row.overtime-row .status-value {
             color: #ff007f;
-            text-shadow: 0 0 10px rgba(255, 0, 127, 0.4);
+            text-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
+            animation: overtimeValuePulse 2s infinite ease-in-out;
+        }
+
+        @keyframes overtimeValuePulse {
+            0%, 100% { 
+                text-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+            }
+            50% { 
+                text-shadow: 0 0 25px rgba(255, 0, 127, 0.9);
+            }
         }
 
         @keyframes overtimePulse {
@@ -1343,6 +1519,7 @@
             minsVal.textContent = "00";
             secsVal.textContent = "00";
             timeSubTag.textContent = "REMAINING TIME";
+            timeSubTag.classList.remove('overtime');
 
             targetStatus.textContent = "00:00:00";
             elapsedStatus.textContent = "00:00:00";
@@ -1399,6 +1576,7 @@
                 progressBar.classList.add('overtime');
                 ringCircle.classList.add('overtime');
                 timeSubTag.textContent = "+ OVERTIME ACTIVE";
+                timeSubTag.classList.add('overtime');
             } else {
                 displayLine.classList.remove('overtime');
                 ringContent.classList.remove('overtime');
@@ -1408,6 +1586,7 @@
                 progressBar.classList.remove('overtime');
                 ringCircle.classList.remove('overtime');
                 timeSubTag.textContent = "REMAINING TIME";
+                timeSubTag.classList.remove('overtime');
             }
 
             const activeSec = isOvertime ? overtimeSec : remainingSec;
